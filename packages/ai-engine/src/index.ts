@@ -1,45 +1,41 @@
 /**
  * @finpilot/ai-engine
  *
- * Provider abstraction for FinPilot's AI features. Pick a backend with
- * {@link createProvider}; all backends satisfy the same {@link AIProvider}
- * interface, so app code is identical regardless of which one is active.
+ * Provider abstraction for FinPilot's AI features — **100% on-device, no cloud,
+ * no API key, no network**. The on-device LLM (`llama.rn`, GGUF) is the only
+ * backend; build it with {@link createProvider}. Receipt OCR runs on-device too
+ * via the {@link OcrEngine} seam, feeding the pure receipt parser in
+ * `@finpilot/finance-engine`.
  */
 
 import type { AIProvider } from "./provider.js";
-import { GeminiProvider, type GeminiOptions } from "./gemini.js";
 import { OnDeviceProvider, type OnDeviceOptions } from "./onDevice.js";
 
-export type ProviderKind = "gemini" | "on-device";
+/** The only provider kind — an on-device LLM. */
+export type ProviderKind = "on-device";
 
 /** Options accepted per provider kind. */
 export interface ProviderOptionsMap {
-  gemini: GeminiOptions;
   "on-device": OnDeviceOptions;
 }
 
 /**
- * Build an {@link AIProvider}.
+ * Build an {@link AIProvider}. The on-device LLM is the sole backend.
  *
  * @example
- *   const ai = createProvider("gemini", { apiKey: process.env.GEMINI_API_KEY });
+ *   const ai = createProvider("on-device", { modelPath });
  *   const reply = await ai.chat([{ role: "user", content: "How am I doing?" }], ctx);
  */
 export function createProvider<K extends ProviderKind>(
   kind: K,
   opts?: ProviderOptionsMap[K],
 ): AIProvider {
-  switch (kind) {
-    case "gemini":
-      return new GeminiProvider(opts as GeminiOptions);
-    case "on-device":
-      return new OnDeviceProvider(opts as OnDeviceOptions);
-    default: {
-      // Exhaustiveness guard — a new kind must be handled here.
-      const _never: never = kind;
-      throw new Error(`Unknown provider kind: ${String(_never)}`);
-    }
+  if (kind === "on-device") {
+    return new OnDeviceProvider(opts as OnDeviceOptions);
   }
+  // Unreachable today (on-device is the only kind), but keep an explicit guard
+  // so adding a future kind without handling it is a clear runtime error.
+  throw new Error(`Unknown provider kind: ${String(kind)}`);
 }
 
 export type { AIProvider, BudgetGoal, SpendHistory } from "./provider.js";
@@ -48,7 +44,7 @@ export {
   FINANCE_SYSTEM_PROMPT,
   buildChatPrompt,
   buildFinanceContextBlock,
-  buildReceiptPrompt,
+  buildReceiptRefinePrompt,
   buildBudgetPrompt,
   buildInsightsPrompt,
 } from "./prompts.js";
@@ -70,10 +66,18 @@ export {
   type ChatResponse,
   type SafeParse,
 } from "./schemas.js";
-export { GeminiProvider, type GeminiOptions } from "./gemini.js";
 export {
   OnDeviceProvider,
   type OnDeviceOptions,
   ON_DEVICE_UNAVAILABLE_MESSAGE,
+  DEFAULT_ON_DEVICE_MODEL,
 } from "./onDevice.js";
 export { FakeProvider, type FakeProviderOverrides } from "./fake.js";
+export {
+  type OcrEngine,
+  type OcrEngineKind,
+  MlKitOcrEngine,
+  FakeOcrEngine,
+  createOcrEngine,
+  OCR_UNAVAILABLE_MESSAGE,
+} from "./ocr.js";

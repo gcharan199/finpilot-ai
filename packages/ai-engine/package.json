@@ -1,7 +1,7 @@
 {
   "name": "@finpilot/ai-engine",
   "version": "0.1.0",
-  "description": "AI provider abstraction (Gemini + on-device), zod output schemas, and prompt builders for FinPilot AI.",
+  "description": "On-device AI provider abstraction, on-device OCR seam, zod output schemas, and prompt builders for FinPilot AI. No cloud, no network.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@google/genai": "^1.5.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

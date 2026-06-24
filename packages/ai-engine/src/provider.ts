@@ -1,13 +1,17 @@
 /**
  * The AIProvider interface — the seam every backend implements.
  *
- * Keeping the app behind this interface means Gemini, an on-device LLM, or a
- * fake test double are all interchangeable. Methods return typed, already-parsed
- * results (validated by the zod schemas in `schemas.ts`).
+ * Keeping the app behind this interface means the on-device LLM and a fake test
+ * double are interchangeable. Methods return typed, already-parsed results
+ * (validated by the zod schemas in `schemas.ts`).
+ *
+ * Receipt OCR is intentionally NOT part of this interface — it lives behind the
+ * separate {@link OcrEngine} seam (on-device text recognition) plus the pure
+ * `parseReceiptText` parser, so the whole receipt path stays 100% local.
  */
 
 import type { ChatMessage, FinanceContext } from "./prompts.js";
-import type { GeneratedBudget, GeneratedInsights, Receipt } from "./schemas.js";
+import type { GeneratedBudget, GeneratedInsights } from "./schemas.js";
 
 export type { ChatMessage, FinanceContext } from "./prompts.js";
 
@@ -21,7 +25,7 @@ export type SpendHistory = Array<{ category: string; amount: number }>;
 
 /** The pluggable AI backend. */
 export interface AIProvider {
-  /** Identifier for logging/telemetry, e.g. "gemini" or "on-device". */
+  /** Identifier for logging/telemetry, e.g. "on-device". */
   readonly name: string;
 
   /**
@@ -29,13 +33,6 @@ export interface AIProvider {
    * @returns the assistant's reply text.
    */
   chat(messages: ChatMessage[], financeContext: FinanceContext): Promise<string>;
-
-  /**
-   * Extract structured fields from a receipt image.
-   * @param imageBase64 base64-encoded image bytes (no data: prefix).
-   * @param mimeType e.g. "image/jpeg" | "image/png".
-   */
-  extractReceipt(imageBase64: string, mimeType: string): Promise<Receipt>;
 
   /** Generate short, prioritized insights from a finance snapshot. */
   generateInsights(context: FinanceContext): Promise<GeneratedInsights>;

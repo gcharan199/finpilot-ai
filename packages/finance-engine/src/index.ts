@@ -18,3 +18,8 @@ export {
   DEFAULT_CATEGORY_RULES,
   type CategorizeOptions,
 } from "./categorize.js";
+export {
+  parseReceiptText,
+  type ParsedReceipt,
+  type ParseReceiptOptions,
+} from "./receiptParser.js";

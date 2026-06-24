@@ -1,11 +1,13 @@
 name: CI
 
-# Verifies the whole workspace: the pure-TS core packages (lint/typecheck/test)
-# plus that the Expo app bundles via `expo export`.
+# Verifies the whole workspace: the pure-TS core packages (build/lint/typecheck/
+# test, incl. the on-device receipt-parser tests — no key, no network) plus that
+# the Expo app bundles via `expo export`.
 #
-# NOT covered here (by design): the live Gemini eval (needs an API key + network),
-# the on-device LLM path (needs an EAS dev build + a native model), and on-device
-# UI/interaction testing (needs a simulator/device). Those run out of band.
+# NOT covered here (by design — these need a real device, not CI): the on-device
+# LLM path (`llama.rn` + a GGUF model), the on-device OCR module (ML Kit), and
+# on-device UI/interaction testing (simulator/device). FinPilot is 100%
+# on-device — there is no cloud step to test.
 
 on:
   push:

@@ -1,24 +1,23 @@
 /**
- * Persisted app settings + secrets.
+ * Persisted app settings.
  *
- * Secrets (the Gemini API key, the lock PIN) live in `expo-secure-store`
- * (Keychain / Keystore). Non-secret prefs (provider choice, theme) also go to
- * secure-store for simplicity — it is a tiny KV store and avoids pulling in a
- * second persistence lib.
+ * FinPilot is **100% on-device** — there is no API key and no cloud account, so
+ * the only secret stored here is the lock PIN. Non-secret prefs (the selected
+ * on-device model, theme) also live in `expo-secure-store` for simplicity — it
+ * is a tiny KV store and avoids pulling in a second persistence lib.
  *
- * The Gemini key resolution order is: secure-store value → `EXPO_PUBLIC_GEMINI_API_KEY`
- * dev fallback → none.
+ * `expo-file-system` is loaded lazily (only when checking whether a downloaded
+ * model file exists) so importing this module never requires it in Node.
  */
 import * as SecureStore from "expo-secure-store";
+import { DEFAULT_ON_DEVICE_MODEL } from "@finpilot/ai-engine";
 
 const KEYS = {
-  geminiApiKey: "finpilot.gemini.apiKey",
-  provider: "finpilot.ai.provider",
+  model: "finpilot.ai.model",
   theme: "finpilot.theme",
   pin: "finpilot.lock.pin",
 } as const;
 
-export type ProviderChoice = "gemini" | "on-device";
 export type ThemeChoice = "light" | "dark" | "system";
 
 async function get(key: string): Promise<string | null> {
@@ -27,37 +26,58 @@ async function get(key: string): Promise<string | null> {
 async function set(key: string, value: string): Promise<void> {
   await SecureStore.setItemAsync(key, value);
 }
-async function del(key: string): Promise<void> {
-  await SecureStore.deleteItemAsync(key);
+
+/* ---- On-device model --------------------------------------------------- */
+
+/** The default GGUF model id (overridable in Settings once more are added). */
+export const DEFAULT_MODEL = DEFAULT_ON_DEVICE_MODEL;
+
+/** The selected on-device model id (file name). */
+export async function getModelId(): Promise<string> {
+  return (await get(KEYS.model)) ?? DEFAULT_MODEL;
+}
+export async function setModelId(id: string): Promise<void> {
+  return set(KEYS.model, id);
 }
 
-/* ---- Gemini API key ---------------------------------------------------- */
-
-const ENV_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? "";
-
-/** Stored key, else the dev `EXPO_PUBLIC` fallback, else empty string. */
-export async function getGeminiApiKey(): Promise<string> {
-  const stored = await get(KEYS.geminiApiKey);
-  return stored ?? ENV_KEY;
+/**
+ * Absolute path the model file is expected at on the device. Built from the
+ * app's document directory; `null` when `expo-file-system` is unavailable (e.g.
+ * Node / a bundle without the native module).
+ */
+export async function getModelPath(): Promise<string | null> {
+  const id = await getModelId();
+  try {
+    // Literal specifier so Metro bundles expo-file-system (a standard Expo
+    // module) — unlike the dev-build-only native AI libs, this resolves fine.
+    const FS = (await import("expo-file-system")) as unknown as {
+      documentDirectory?: string | null;
+    };
+    if (!FS.documentDirectory) return null;
+    return `${FS.documentDirectory}models/${id}`;
+  } catch {
+    return null;
+  }
 }
-export async function setGeminiApiKey(value: string): Promise<void> {
-  if (value.trim().length === 0) return del(KEYS.geminiApiKey);
-  return set(KEYS.geminiApiKey, value.trim());
-}
-/** True if a usable key exists from any source. */
-export async function hasGeminiApiKey(): Promise<boolean> {
-  return (await getGeminiApiKey()).length > 0;
-}
-export const geminiModel = process.env.EXPO_PUBLIC_GEMINI_MODEL || "gemini-2.5-flash";
 
-/* ---- Provider ---------------------------------------------------------- */
-
-export async function getProvider(): Promise<ProviderChoice> {
-  const v = await get(KEYS.provider);
-  return v === "on-device" ? "on-device" : "gemini";
-}
-export async function setProvider(p: ProviderChoice): Promise<void> {
-  return set(KEYS.provider, p);
+/**
+ * True when the model file has actually been downloaded to the device. Honest
+ * status for Settings; returns false whenever `expo-file-system` (a dev-build
+ * native module) is not present.
+ */
+export async function isModelDownloaded(): Promise<boolean> {
+  try {
+    const FS = (await import("expo-file-system")) as unknown as {
+      documentDirectory?: string | null;
+      getInfoAsync?: (uri: string) => Promise<{ exists: boolean }>;
+    };
+    const path = await getModelPath();
+    if (!path || !FS.getInfoAsync) return false;
+    const info = await FS.getInfoAsync(path);
+    return info.exists;
+  } catch {
+    return false;
+  }
 }
 
 /* ---- Theme ------------------------------------------------------------- */

@@ -18,7 +18,7 @@ import {
   useMonthTotals,
   useSpendByCategory,
 } from "../../src/lib/hooks";
-import { getActiveProvider, NO_KEY_MESSAGE } from "../../src/lib/ai";
+import { getActiveProvider, ON_DEVICE_HELP_MESSAGE } from "../../src/lib/ai";
 import { money, monthKey, monthLabel, moneyCompact } from "../../src/lib/format";
 
 const SEVERITY_TONE = {
@@ -152,7 +152,7 @@ export default function ReportsScreen() {
           <Text tone="danger" variant="caption">
             {err}
             {"\n"}
-            {NO_KEY_MESSAGE}
+            {ON_DEVICE_HELP_MESSAGE}
           </Text>
         ) : narrative ? (
           <View className="gap-3">

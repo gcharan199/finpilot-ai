@@ -11,17 +11,21 @@ import {
   Text,
   useTheme,
 } from "@finpilot/ui";
-import type { Receipt } from "@finpilot/ai-engine";
+import { parseReceiptText, type ParsedReceipt } from "@finpilot/finance-engine";
 import { useAddTransaction, useCategories } from "../src/lib/hooks";
-import { getActiveProvider, NO_KEY_MESSAGE } from "../src/lib/ai";
+import { getOcrEngine, ON_DEVICE_HELP_MESSAGE } from "../src/lib/ai";
 
 type Phase = "capture" | "extracting" | "review";
 
 /**
- * Receipt scanner: pick/take a photo → base64 → provider.extractReceipt →
- * review the extracted fields → save as a transaction. Camera + library both
- * route through expo-image-picker (camera needs a dev/standalone build; the
- * library path works in Expo Go).
+ * Receipt scanner — 100% on-device:
+ *   pick/take a photo → on-device OCR (recognize text) → pure parseReceiptText
+ *   → review the parsed fields → save as a transaction.
+ *
+ * No image or text ever leaves the device. Camera + library both route through
+ * expo-image-picker. The OCR native module needs an EAS dev build; in Expo Go /
+ * a standard export it throws a clear "enable on-device AI" message instead of
+ * crashing or calling any cloud.
  */
 export default function ScannerScreen() {
   const { colors } = useTheme();
@@ -30,25 +34,22 @@ export default function ScannerScreen() {
 
   const [phase, setPhase] = useState<Phase>("capture");
   const [preview, setPreview] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [receipt, setReceipt] = useState<ParsedReceipt | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleImage = async (asset: ImagePicker.ImagePickerAsset) => {
     setPreview(asset.uri);
     setError(null);
-    if (!asset.base64) {
-      setError("Could not read image data.");
-      return;
-    }
     setPhase("extracting");
     try {
-      const provider = await getActiveProvider();
-      const mime = asset.mimeType ?? "image/jpeg";
-      const extracted = await provider.extractReceipt(asset.base64, mime);
-      setReceipt(extracted);
+      // On-device OCR → raw text, then the pure local parser → structured fields.
+      const ocr = getOcrEngine();
+      const text = await ocr.recognize(asset.uri);
+      const parsed = parseReceiptText(text);
+      setReceipt(parsed);
       setPhase("review");
     } catch (e) {
-      setError(`${e instanceof Error ? e.message : String(e)}\n${NO_KEY_MESSAGE}`);
+      setError(`${e instanceof Error ? e.message : String(e)}\n${ON_DEVICE_HELP_MESSAGE}`);
       setPhase("capture");
     }
   };
@@ -56,8 +57,7 @@ export default function ScannerScreen() {
   const pickFromLibrary = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      base64: true,
-      quality: 0.6,
+      quality: 0.8,
     });
     if (!res.canceled && res.assets[0]) await handleImage(res.assets[0]);
   };
@@ -68,7 +68,7 @@ export default function ScannerScreen() {
       setError("Camera permission denied.");
       return;
     }
-    const res = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 });
+    const res = await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!res.canceled && res.assets[0]) await handleImage(res.assets[0]);
   };
 
@@ -102,7 +102,8 @@ export default function ScannerScreen() {
             Scan a receipt
           </Text>
           <Text tone="muted" variant="caption" className="mt-1 text-center">
-            We extract the merchant, total, GST, date and category with AI.
+            On-device OCR reads the merchant, total, GST, date and category — the
+            image never leaves your phone.
           </Text>
         </Card>
       )}

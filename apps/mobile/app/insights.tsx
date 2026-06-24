@@ -13,7 +13,7 @@ import {
 } from "@finpilot/ui";
 import type { GeneratedInsights } from "@finpilot/ai-engine";
 import { useFinanceContext, useInsights } from "../src/lib/hooks";
-import { getActiveProvider, NO_KEY_MESSAGE } from "../src/lib/ai";
+import { getActiveProvider, ON_DEVICE_HELP_MESSAGE } from "../src/lib/ai";
 import { money, monthKey } from "../src/lib/format";
 
 export default function InsightsScreen() {
@@ -138,7 +138,7 @@ export default function InsightsScreen() {
           <Text tone="danger" variant="caption">
             {err}
             {"\n"}
-            {NO_KEY_MESSAGE}
+            {ON_DEVICE_HELP_MESSAGE}
           </Text>
         ) : ai ? (
           <View className="gap-3">

@@ -6,6 +6,7 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  // The SDK is a peer the consumer installs; keep it external so we don't bundle it.
-  external: ["@google/genai"],
+  // Native libs are loaded via guarded dynamic import only inside an EAS dev
+  // build; keep them external so we never try to bundle them here.
+  external: ["llama.rn", "@react-native-ml-kit/text-recognition"],
 });

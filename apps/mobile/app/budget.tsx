@@ -18,7 +18,7 @@ import {
 } from "@finpilot/finance-engine";
 import type { GeneratedBudget } from "@finpilot/ai-engine";
 import { useMonthTotals, useSpendByCategory } from "../src/lib/hooks";
-import { getActiveProvider, NO_KEY_MESSAGE } from "../src/lib/ai";
+import { getActiveProvider, ON_DEVICE_HELP_MESSAGE } from "../src/lib/ai";
 import { money, monthKey } from "../src/lib/format";
 
 export default function BudgetScreen() {
@@ -57,7 +57,7 @@ export default function BudgetScreen() {
         );
         setAi(result);
       } catch (e) {
-        setErr(`${e instanceof Error ? e.message : String(e)}\n${NO_KEY_MESSAGE}`);
+        setErr(`${e instanceof Error ? e.message : String(e)}\n${ON_DEVICE_HELP_MESSAGE}`);
       } finally {
         setBusy(false);
       }

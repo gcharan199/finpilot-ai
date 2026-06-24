@@ -8,11 +8,10 @@
 
 import type { AIProvider, BudgetGoal, SpendHistory } from "./provider.js";
 import type { ChatMessage, FinanceContext } from "./prompts.js";
-import type { GeneratedBudget, GeneratedInsights, Receipt } from "./schemas.js";
+import type { GeneratedBudget, GeneratedInsights } from "./schemas.js";
 
 export interface FakeProviderOverrides {
   chat?: string;
-  receipt?: Receipt;
   insights?: GeneratedInsights;
   budget?: GeneratedBudget;
 }
@@ -28,19 +27,6 @@ export class FakeProvider implements AIProvider {
     this.calls.push({ method: "chat", args: [messages, financeContext] });
     const last = messages[messages.length - 1]?.content ?? "";
     return this.overrides.chat ?? `FinPilot here. You asked: "${last}".`;
-  }
-
-  async extractReceipt(imageBase64: string, mimeType: string): Promise<Receipt> {
-    this.calls.push({ method: "extractReceipt", args: [imageBase64, mimeType] });
-    return (
-      this.overrides.receipt ?? {
-        merchant: "Test Mart",
-        amount: 42.5,
-        gst: 2.5,
-        date: "2026-01-15",
-        category: "Groceries",
-      }
-    );
   }
 
   async generateInsights(context: FinanceContext): Promise<GeneratedInsights> {

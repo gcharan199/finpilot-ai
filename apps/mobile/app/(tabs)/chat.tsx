@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Input, Text, useTheme } from "@finpilot/ui";
 import type { ChatMessage } from "@finpilot/ai-engine";
 import { useFinanceContext } from "../../src/lib/hooks";
-import { getActiveProvider, NO_KEY_MESSAGE } from "../../src/lib/ai";
+import { getActiveProvider, ON_DEVICE_HELP_MESSAGE } from "../../src/lib/ai";
 
 const STARTERS = [
   "How am I doing this month?",
@@ -42,7 +42,7 @@ export default function ChatScreen() {
       const msg = e instanceof Error ? e.message : String(e);
       setMessages([
         ...next,
-        { role: "assistant", content: `${msg}\n\n${NO_KEY_MESSAGE}` },
+        { role: "assistant", content: `${msg}\n\n${ON_DEVICE_HELP_MESSAGE}` },
       ]);
     } finally {
       setBusy(false);
@@ -77,8 +77,8 @@ export default function ChatScreen() {
           {messages.length === 0 ? (
             <View className="mt-6 gap-3">
               <Text tone="muted" className="text-center">
-                Ask anything about your money. Your data never leaves the
-                conversation context.
+                Ask anything about your money. The model runs on-device — nothing
+                ever leaves your phone.
               </Text>
               <View className="mt-2 gap-2">
                 {STARTERS.map((s) => (

@@ -2,7 +2,7 @@
  * Pure prompt builders.
  *
  * No SDK, no IO — just string construction. Kept separate so they can be unit
- * tested and reused by any provider (Gemini, on-device, a fake).
+ * tested and reused by any provider (the on-device LLM, a fake).
  */
 
 /** A finance context blob injected into chat so the model can reason about the user. */
@@ -74,17 +74,25 @@ export function buildChatPrompt(
   return { system: FINANCE_SYSTEM_PROMPT, userText };
 }
 
-/** Instruction for extracting structured fields from a receipt image. */
-export function buildReceiptPrompt(): string {
+/**
+ * Instruction for refining receipt fields the pure parser already extracted
+ * from on-device OCR text. The heuristic parser stands alone; this is an
+ * OPTIONAL on-device-LLM refinement step for ambiguous text. No image is sent —
+ * only the recognized text, so the whole path stays local.
+ */
+export function buildReceiptRefinePrompt(ocrText: string): string {
   return [
-    "Extract the purchase details from this receipt image.",
-    "Return JSON with exactly these fields:",
+    "Below is the raw text recognized from a receipt by on-device OCR.",
+    "Extract the purchase details. Return JSON with exactly these fields:",
     "- merchant: the store/vendor name (string)",
     "- amount: the grand total paid (number)",
     "- gst: the tax/GST/VAT amount if shown, else 0 (number)",
     "- date: the purchase date in YYYY-MM-DD (string)",
     "- category: the best-fit spending category (string)",
     "If a field is unreadable, use a sensible default (merchant 'Unknown', gst 0).",
+    "",
+    "[Receipt OCR text]",
+    ocrText,
   ].join("\n");
 }
 

@@ -1,31 +1,26 @@
 import { createProvider } from "../index.js";
 import { FakeProvider } from "../fake.js";
 import { OnDeviceProvider, ON_DEVICE_UNAVAILABLE_MESSAGE } from "../onDevice.js";
-import { receiptSchema, budgetSchema, insightsSchema } from "../schemas.js";
+import { FakeOcrEngine, MlKitOcrEngine, OCR_UNAVAILABLE_MESSAGE } from "../ocr.js";
+import { budgetSchema, insightsSchema } from "../schemas.js";
 
 describe("createProvider factory", () => {
-  it("builds an on-device provider", () => {
+  it("builds an on-device provider (the only kind)", () => {
     const p = createProvider("on-device");
     expect(p.name).toBe("on-device");
     expect(p).toBeInstanceOf(OnDeviceProvider);
   });
 
-  it("throws when building gemini without an API key", () => {
-    const prev = process.env.GEMINI_API_KEY;
-    delete process.env.GEMINI_API_KEY;
-    expect(() => createProvider("gemini")).toThrow(/api key/i);
-    if (prev !== undefined) process.env.GEMINI_API_KEY = prev;
-  });
-
-  it("builds a gemini provider when a key is supplied (no network call)", () => {
-    const p = createProvider("gemini", { apiKey: "test-key-not-used" });
-    expect(p.name).toBe("gemini");
+  it("records the configured model path", () => {
+    const p = new OnDeviceProvider({ modelPath: "/models/gemma.gguf" });
+    expect(p.modelPath).toBe("/models/gemma.gguf");
   });
 });
 
 describe("OnDeviceProvider", () => {
-  // The native lib is intentionally absent in Node, so every method should throw
-  // the clear, documented error rather than crash on a static import.
+  // The native lib + a model file are intentionally absent in Node, so every
+  // method should throw the clear, documented error rather than crash on a
+  // static import or make any network call.
   it("throws the actionable error for chat", async () => {
     const p = new OnDeviceProvider();
     await expect(p.chat([{ role: "user", content: "hi" }], {})).rejects.toThrow(
@@ -33,19 +28,39 @@ describe("OnDeviceProvider", () => {
     );
   });
 
-  it("throws the actionable error for receipt extraction", async () => {
-    const p = new OnDeviceProvider({ lib: "llama.rn" });
-    await expect(p.extractReceipt("base64", "image/png")).rejects.toThrow(
-      /EAS dev build/i,
-    );
+  it("throws the actionable error when no model path is configured", async () => {
+    const p = new OnDeviceProvider();
+    await expect(p.generateInsights({})).rejects.toThrow(/EAS dev build/i);
   });
 
   it("throws for insights and budget too", async () => {
-    const p = new OnDeviceProvider();
+    const p = new OnDeviceProvider({ modelPath: "/models/x.gguf" });
     await expect(p.generateInsights({})).rejects.toThrow(ON_DEVICE_UNAVAILABLE_MESSAGE);
     await expect(
       p.generateBudget({ monthlyIncome: 1000, savingsGoal: 100 }, []),
     ).rejects.toThrow(ON_DEVICE_UNAVAILABLE_MESSAGE);
+  });
+
+  it("exposes no extractReceipt method (OCR lives in the OcrEngine seam)", () => {
+    const p = new OnDeviceProvider();
+    expect((p as unknown as Record<string, unknown>).extractReceipt).toBeUndefined();
+  });
+});
+
+describe("OcrEngine", () => {
+  it("the ML Kit engine throws the actionable error in Node (no native lib)", async () => {
+    const ocr = new MlKitOcrEngine();
+    expect(ocr.name).toBe("ml-kit");
+    await expect(ocr.recognize("file:///receipt.jpg")).rejects.toThrow(
+      OCR_UNAVAILABLE_MESSAGE,
+    );
+  });
+
+  it("the fake engine returns canned text and records calls", async () => {
+    const ocr = new FakeOcrEngine("STORE\nTOTAL 9.99");
+    const text = await ocr.recognize("file:///r.jpg");
+    expect(text).toContain("TOTAL 9.99");
+    expect(ocr.calls).toEqual(["file:///r.jpg"]);
   });
 });
 
@@ -58,9 +73,6 @@ describe("FakeProvider", () => {
     });
     expect(typeof reply).toBe("string");
     expect(reply).toContain("How am I doing?");
-
-    const receipt = await p.extractReceipt("b64", "image/jpeg");
-    expect(receiptSchema.safeParse(receipt).success).toBe(true);
 
     const insights = await p.generateInsights({ healthScore: 70 });
     expect(insightsSchema.safeParse(insights).success).toBe(true);
@@ -79,13 +91,5 @@ describe("FakeProvider", () => {
     expect(reply).toBe("canned reply");
     expect(p.calls).toHaveLength(1);
     expect(p.calls[0]!.method).toBe("chat");
-  });
-
-  it("returns a receipt with the expected field shape", async () => {
-    const p = new FakeProvider();
-    const r = await p.extractReceipt("b64", "image/png");
-    expect(Object.keys(r).sort()).toEqual(
-      ["amount", "category", "date", "gst", "merchant"].sort(),
-    );
   });
 });

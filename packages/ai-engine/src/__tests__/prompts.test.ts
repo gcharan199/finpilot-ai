@@ -1,7 +1,7 @@
 import {
   buildChatPrompt,
   buildFinanceContextBlock,
-  buildReceiptPrompt,
+  buildReceiptRefinePrompt,
   buildBudgetPrompt,
   buildInsightsPrompt,
   FINANCE_SYSTEM_PROMPT,
@@ -44,13 +44,15 @@ describe("buildChatPrompt", () => {
   });
 });
 
-describe("buildReceiptPrompt", () => {
-  it("asks for the required structured fields", () => {
-    const p = buildReceiptPrompt();
+describe("buildReceiptRefinePrompt", () => {
+  it("asks for the required structured fields and embeds the OCR text", () => {
+    const p = buildReceiptRefinePrompt("WHOLE FOODS\nTOTAL 54.20");
     for (const field of ["merchant", "amount", "gst", "date", "category"]) {
       expect(p).toContain(field);
     }
     expect(p).toContain("YYYY-MM-DD");
+    expect(p).toContain("WHOLE FOODS");
+    expect(p).toContain("TOTAL 54.20");
   });
 });
 
