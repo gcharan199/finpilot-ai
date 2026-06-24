@@ -33,6 +33,11 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Build the library packages first so consumers resolve their dist/ +
+      # types (lint's import resolver, typecheck, and the Expo bundle all need it).
+      - name: Build packages
+        run: pnpm -r --filter "./packages/*" build
+
       - name: Lint
         run: pnpm -r lint
 
