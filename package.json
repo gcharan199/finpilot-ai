@@ -1,0 +1,29 @@
+{
+  "name": "finpilot-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FinPilot AI — AI-powered personal finance app. Verifiable pure-TypeScript core (finance engine, database, AI engine).",
+  "author": "Charan Goriparthi",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "eval": "pnpm --filter @finpilot/finance-engine eval",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,json,md}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  }
+}

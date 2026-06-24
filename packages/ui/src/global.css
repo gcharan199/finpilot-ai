@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Theme variables. Values are space-separated RGB channels so Tailwind's
+ * `rgb(var(--x) / <alpha-value>)` can apply opacity. Light is the default;
+ * `.dark` (toggled by NativeWind's colorScheme) swaps the ink/mint ends.
+ * Keep these in sync with packages/ui/src/theme/tokens.ts.
+ */
+:root {
+  --background: 246 247 246; /* ink.50  */
+  --card: 255 255 255; /* ink.0   */
+  --muted: 236 238 236; /* ink.100 */
+  --muted-foreground: 92 100 94; /* ink.500 */
+  --foreground: 18 22 19; /* ink.900 */
+  --border: 215 219 216; /* ink.200 */
+  --primary: 5 150 105; /* mint.600 */
+  --primary-foreground: 255 255 255; /* ink.0 */
+  --positive: 5 150 105; /* mint.600 */
+  --warning: 217 119 6; /* amber.600 */
+  --danger: 225 29 72; /* rose.600 */
+  --info: 2 132 199; /* sky.600 */
+  --accent: 124 58 237; /* violet.600 */
+}
+
+.dark:root,
+.dark {
+  --background: 11 14 12; /* ink.950 */
+  --card: 18 22 19; /* ink.900 */
+  --muted: 27 32 29; /* ink.800 */
+  --muted-foreground: 130 139 133; /* ink.400 */
+  --foreground: 246 247 246; /* ink.50 */
+  --border: 42 48 44; /* ink.700 */
+  --primary: 52 211 153; /* mint.400 */
+  --primary-foreground: 11 14 12; /* ink.950 */
+  --positive: 52 211 153; /* mint.400 */
+  --warning: 251 191 36; /* amber.400 */
+  --danger: 251 113 133; /* rose.400 */
+  --info: 56 189 248; /* sky.400 */
+  --accent: 167 139 250; /* violet.400 */
+}

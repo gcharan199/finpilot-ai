@@ -1,0 +1,49 @@
+name: CI
+
+# Verifies the whole workspace: the pure-TS core packages (lint/typecheck/test)
+# plus that the Expo app bundles via `expo export`.
+#
+# NOT covered here (by design): the live Gemini eval (needs an API key + network),
+# the on-device LLM path (needs an EAS dev build + a native model), and on-device
+# UI/interaction testing (needs a simulator/device). Those run out of band.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Do NOT pass a `version:` input here — `packageManager` in package.json
+      # pins pnpm@9.15.9. Passing both triggers ERR_PNPM_BAD_PM_VERSION.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test
+
+      # The key proof the app compiles + bundles. iOS platform export; the
+      # Hermes bytecode bundle is produced under apps/mobile/dist.
+      - name: Expo export (bundle check)
+        working-directory: apps/mobile
+        run: pnpm exec expo export --platform ios

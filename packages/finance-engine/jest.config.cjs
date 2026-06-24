@@ -1,0 +1,14 @@
+/** @type {import('jest').Config} */
+module.exports = {
+  preset: "ts-jest/presets/default-esm",
+  testEnvironment: "node",
+  extensionsToTreatAsEsm: [".ts"],
+  moduleNameMapper: {
+    // Allow ESM-style ".js" import specifiers to resolve to ".ts" sources.
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+  },
+  transform: {
+    "^.+\\.ts$": ["ts-jest", { useESM: true, tsconfig: "tsconfig.json" }],
+  },
+  testMatch: ["**/__tests__/**/*.test.ts"],
+};

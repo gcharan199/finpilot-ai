@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Test coverage
+coverage/
+
+# Expo / RN (for the mobile app added later)
+.expo/
+.expo-shared/
+
+# Turbo / build caches
+.turbo/
+
+# OS / editor
+.DS_Store
+*.log
